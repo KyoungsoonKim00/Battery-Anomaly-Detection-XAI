@@ -216,3 +216,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# PyTorch 모델 가중치 파일은 모두 무시
+*.pth
+*.pt
+
+# data 폴더의 대용량 원본 데이터 무시
+data/raw/
+
+# 단, models 폴더 안의 shap 캐시 파일은 예외적으로 허용 (추후 생성 시 업로드됨)
+!models/shap_values.npy

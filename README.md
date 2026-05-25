@@ -28,6 +28,29 @@
 - **Robustness:** PCA 기반 차원 축소의 한계(정보 손실)를 극복하고, 208개 센서 Raw Data의 시계열적 특성을 온전히 보존.
 
 ---
+## 🧠 왜 Transformer와 SHAP인가? (Model & XAI Architecture)
+기존의 배터리 이상탐지는 주로 PCA(주성분 분석) 등을 통해 다차원 센서 데이터를 축소하여 분석했습니다. 하지만 배터리팩 데이터는 208개의 센서가 시간에 따라 상호작용하는 복잡한 시계열 데이터이므로, 단순 차원 축소는 중요한 비선형적 패턴과 시간적 흐름(Information Loss)을 놓치게 됩니다.
+
+본 프로젝트는 **Transformer의 Attention 메커니즘**을 도입하여 208개 센서 간의 유의미한 상관관계를 원본 그대로 학습하고, **SHAP**을 통해 블랙박스 모델의 판단 근거(어떤 센서가 이상을 유발했는지)를 역추적하여 현장에 제공합니다.
+
+<details>
+<summary><b>💡 (클릭) 수학적 엄밀성 및 아키텍처 상세 보기</b></summary>
+<div markdown="1">
+
+#### 1. Transformer Autoencoder
+- **Self-Attention Mechanism**: 
+  $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
+  각 센서 데이터(Query)가 다른 모든 센서(Key)와 얼마나 연관되어 있는지 가중치를 계산합니다. 이를 통해 정상 상태에서의 센서 간 동기화 패턴을 학습하고, 특정 센서의 비정상적인 거동을 민감하게 포착합니다.
+- **Anomaly Detection**: 정상(OK) 데이터로만 학습된 Autoencoder는 불량(NG) 데이터 입력 시 복원 오차(Reconstruction Error)가 급증합니다. 이 MSE(Mean Squared Error) 기반의 오차를 최종 Anomaly Score로 활용합니다.
+
+#### 2. 불량 원인 규명 (SHAP)
+- 모델의 최종 복원 오차를 Target Value로 설정하고, 208개 입력 피처(센서)에 대한 섀플리 값(Shapley Value)을 계산합니다.
+  $$\phi_i(v) = \sum_{S \subseteq N \setminus \{i\}} \frac{|S|!(|N|-|S|-1)!}{|N|!} (v(S \cup \{i\}) - v(S))$$
+- 이 수식을 통해 특정 센서가 최종 이상 점수 도출에 기여한 '한계 기여도'를 정량화하여, "M16T02 센서가 전체 이상 점수 증가에 45% 기여했다"와 같은 명확한 해석을 가능하게 합니다.
+
+</div>
+</details>
+
 
 ## 🚀 Quick Start (재현 방법)
 본 프로젝트는 누구나 쉽게 결과를 재현할 수 있도록 모듈화되어 있습니다.

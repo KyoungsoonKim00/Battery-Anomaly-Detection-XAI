@@ -68,20 +68,25 @@ Battery_Anomaly_Detection/
 ---
 
 ## 🚀 시작하기 (How to Run)
+본 프로젝트는 코랩환경에서 구현되었습니다.
 
-### 1. 필수 패키지 설치
+### 1.데이터 다운로드
+데이터 저작권 및 용량 관계로 샘플 데이터만 제공됩니다. 전체 원본 데이터는 아래 링크에서 다운로드 후 `data/` 폴더에 배치해 주세요.
+- **데이터 출처:** [KAMP 전자부품(배터리팩) 품질보증 AI 데이터셋](https://www.kamp-ai.kr/aidataDetail?AI_SEARCH=&page=5&DATASET_SEQ=58&DISPLAY_MODE_SEL=CARD&EQUIP_SEL=&GUBUN_SEL=&FILE_TYPE_SEL=&WDATE_SEL=)
+
+### 2. 필수 패키지 설치
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 디렉토리 설정 및 데이터 준비
+### 3. 디렉토리 설정 및 데이터 준비
 구글 드라이브 또는 로컬 환경에 맞게 src/config.py 파일 내의 BASE_PATH 경로를 수정합니다.
 ```Python
 # src/config.py
 BASE_PATH = "/content/drive/MyDrive/KAMP_Battery_Project"
 ```
 
-### 3. 파이프라인 실행
+### 4. 파이프라인 실행
 순수 파이썬 모듈 환경에서 전처리, 학습 및 검증, 최종 평가까지 한 줄로 안전하게 실행할 수 있습니다.
 
 모델 학습 및 가중치 저장:

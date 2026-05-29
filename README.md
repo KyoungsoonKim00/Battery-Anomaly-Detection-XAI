@@ -52,8 +52,7 @@ Battery_Anomaly_Detection/
 
 ### 2. DistilBert 기반 Transformer Autoencoder
 - **시퀀스 인코딩**: 208개 전압 및 온도 채널의 다변량 데이터를 임베딩 레이어를 통해 고차원($d_{model}=128$) 공간으로 투사 후, 포지셔널 임베딩을 결합하여 채널 간의 상대적 정렬 상태를 표현.
-- **Self-Attention 백본**: Hugging Face의 `DistilBertModel`(4 Layers, 4 Heads, Hidden Dim 256) 아키텍처를 차용하여 센서 간 유기![Uploading f1_score.png…]()
-적인 상관관계와 정상 상태의 내부 동기화 패턴을 고도화된 어텐션 메커니즘으로 학습.
+- **Self-Attention 백본**: Hugging Face의 `DistilBertModel`(4 Layers, 4 Heads, Hidden Dim 256) 아키텍처를 차용하여 센서 간 유기적인 상관관계와 정상 상태의 내부 동기화 패턴을 고도화된 어텐션 메커니즘으로 학습.
 - **이상치 점수(Anomaly Score)**: 정상 데이터로만 학습된 오토인코더가 불량 패턴을 입력받을 때 발생하는 **복원 오차(MSE Loss)**의 크기를 기반으로 이상 수준을 정량화.
 
 ### 3. Precision-Recall 곡선 기반 탐색

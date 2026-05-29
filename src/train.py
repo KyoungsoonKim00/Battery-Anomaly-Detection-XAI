@@ -1,100 +1,80 @@
-# src/train.py
-import yaml
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.metrics import f1_score, precision_recall_curve
-import numpy as np
-import os
+from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from sklearn.model_selection import train_test_split
+import config
+from dataset import BatteryDataset
+from model import SensorTransformerAutoencoder
+from preprocess import load_and_preprocess_train_data
 
-from data_loader import get_dataloader
-from model import TransformerAutoencoder
+def main():
+    print("--- 1. 학습 데이터 로드 및 전처리 ---")
+    train_data_scaled, final_sensor_cols = load_and_preprocess_train_data()
+    num_final_sensors = len(final_sensor_cols)
+    
+    train_data, val_data = train_test_split(train_data_scaled, test_size=config.VALIDATION_SPLIT, random_state=42)
+    train_dataset = BatteryDataset(train_data)
+    val_dataset = BatteryDataset(val_data)
+    
+    train_loader = DataLoader(train_dataset, batch_size=config.BATCH_SIZE, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=config.BATCH_SIZE, shuffle=False)
 
-with open("config.yaml", "r") as f:
-    config = yaml.safe_load(f)
+    model = SensorTransformerAutoencoder(num_sensors=num_final_sensors).to(config.DEVICE)
+    loss_fn = nn.MSELoss()
+    optimizer = optim.AdamW(model.parameters(), lr=config.LEARNING_RATE, weight_decay=1e-5)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=config.PATIENCE)
+    
+    model_save_path = os.path.join(config.TRAIN_DIR, "transformer_autoencoder.pth")
+    
+    best_val_loss = float('inf')
+    epochs_no_improve = 0
 
-def find_best_f1_threshold(mse_errors, labels):
-    """Validation 셋의 MSE 에러를 바탕으로 최적의 임계값과 F1 스코어를 탐색"""
-    precisions, recalls, thresholds = precision_recall_curve(labels, mse_errors)
-    # 0으로 나누기 방지
-    f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-8)
-    best_idx = np.argmax(f1_scores)
-    return f1_scores[best_idx], thresholds[best_idx]
-
-def train_model():
-    device = torch.device("cuda" if torch.cuda.is_available() and config['env']['device'] == 'auto' else "cpu")
-    print(f"Training on device: {device}")
-    
-    # 1. DataLoader 호출
-    train_loader, scaler = get_dataloader(mode="train")
-    # Validation 셋은 라벨(정상=0, 불량=1)을 만들기 위해 커스텀 로직이 약간 필요하지만, 
-    # 여기서는 폴더 분할 방식을 가정한 로더를 불러옵니다.
-    val_loader, _ = get_dataloader(mode="val", scaler=scaler) 
-    
-    # 임시로 Val 셋의 실제 라벨 생성 (Test01은 0, Test05는 1로 가정하여 매핑)
-    # 실제 구현 시에는 data_loader.py에서 파일명에 'NG'가 있으면 1, 'OK'면 0을 반환하도록 수정해야 합니다.
-    val_labels = np.array([0]*500 + [1]*500) # 예시용 더미 라벨
-    
-    # 2. 모델 및 학습 설정
-    model = TransformerAutoencoder(
-        input_dim=208, 
-        window_size=config['data']['window_size']
-    ).to(device)
-    
-    criterion = nn.MSELoss(reduction='none') # 샘플별 오차를 구하기 위해 none
-    optimizer = optim.AdamW(model.parameters(), lr=config['train']['learning_rate'])
-    
-    best_val_f1 = 0.0
-    best_threshold = 0.0
-    patience_counter = 0
-    os.makedirs("models", exist_ok=True)
-    
-    # 3. 학습 루프
-    for epoch in range(config['train']['epochs']):
+    print("--- 2. 학습 시작 ---")
+    for epoch in range(config.NUM_EPOCHS):
         model.train()
-        train_loss = 0.0
-        for batch in train_loader:
-            batch = batch.to(device)
+        total_train_loss = 0
+        for batch_data in train_loader:
+            batch_data = batch_data.to(config.DEVICE)
+            reconstructed = model(batch_data)
+            loss = loss_fn(reconstructed, batch_data)
+
             optimizer.zero_grad()
-            reconstructed = model(batch)
-            loss = criterion(reconstructed, batch).mean()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), config.CLIP_VALUE)
             optimizer.step()
-            train_loss += loss.item()
-            
-        # 4. Validation (F-score 평가)
+            total_train_loss += loss.item()
+
+        avg_train_loss = total_train_loss / len(train_loader)
+
         model.eval()
-        val_mses = []
+        total_val_loss = 0
         with torch.no_grad():
-            for batch in val_loader:
-                batch = batch.to(device)
-                reconstructed = model(batch)
-                # 시계열 차원과 센서 차원을 평균내어 샘플당 MSE 1개 추출
-                mse = criterion(reconstructed, batch).mean(dim=[1, 2]).cpu().numpy()
-                val_mses.extend(mse)
-                
-        # Val 데이터 길이와 라벨 길이를 맞춰서 최적 임계값 탐색
-        val_mses = np.array(val_mses)[:len(val_labels)] 
-        current_f1, current_thresh = find_best_f1_threshold(val_mses, val_labels[:len(val_mses)])
-        
-        print(f"Epoch [{epoch+1}/{config['train']['epochs']}] - Train Loss: {train_loss/len(train_loader):.4f} | Val F1: {current_f1:.4f} (Thresh: {current_thresh:.4f})")
-        
-        # 5. Checkpoint 저장 및 Early Stopping 로직
-        if current_f1 > best_val_f1:
-            best_val_f1 = current_f1
-            best_threshold = current_thresh
-            torch.save(model.state_dict(), "models/best_model.pth")
-            # 임계값도 함께 저장
-            with open("models/threshold.txt", "w") as f:
-                f.write(str(current_threshold))
-            patience_counter = 0
-            print("  --> 🌟 Best model saved!")
+            for batch_data in val_loader:
+                batch_data = batch_data.to(config.DEVICE)
+                reconstructed = model(batch_data)
+                loss = loss_fn(reconstructed, batch_data)
+                total_val_loss += loss.item()
+
+        avg_val_loss = total_val_loss / len(val_loader)
+        print(f"Epoch {epoch+1:02d}/{config.NUM_EPOCHS} | Train Loss: {avg_train_loss:.6f} | Val Loss: {avg_val_loss:.6f}")
+
+        scheduler.step(avg_val_loss)
+
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            epochs_no_improve = 0
+            torch.save(model.state_dict(), model_save_path)
+            print(f"  -> Val Loss 개선됨. 모델 저장 완료.")
         else:
-            patience_counter += 1
-            
-        if patience_counter >= config['train']['early_stopping_patience']:
-            print("Early stopping triggered.")
+            epochs_no_improve += 1
+            print(f"  -> Val Loss 개선 없음. (Patience: {epochs_no_improve}/{config.PATIENCE})")
+
+        if epochs_no_improve >= config.PATIENCE:
+            print(f"--- 조기 종료: {config.PATIENCE} Epoch 동안 Val Loss가 개선되지 않았습니다. ---")
             break
 
 if __name__ == "__main__":
-    train_model()
+    main()

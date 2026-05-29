@@ -1,55 +1,40 @@
-# src/model.py
 import torch
 import torch.nn as nn
-import math
+from transformers import DistilBertConfig, DistilBertModel
+import config
 
-class PositionalEncoding(nn.Module):
-    """시계열 데이터의 순서 정보를 Transformer에 주입하기 위한 위치 인코딩"""
-    def __init__(self, d_model, max_len=5000):
-        super(PositionalEncoding, self).__init__()
-        pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0) # (1, max_len, d_model)
-        self.register_buffer('pe', pe)
+bert_config = DistilBertConfig(
+    vocab_size=1, max_position_embeddings=208,
+    n_layers=4, n_heads=4, dim=128, hidden_dim=256
+)
 
-    def forward(self, x):
-        # x shape: (batch_size, seq_len, d_model)
-        return x + self.pe[:, :x.size(1), :]
-
-class TransformerAutoencoder(nn.Module):
-    """PyTorch Native Transformer를 활용한 센서 이상탐지 모델"""
-    def __init__(self, input_dim=208, window_size=30, d_model=128, nhead=4, num_layers=4, dropout=0.1):
-        super(TransformerAutoencoder, self).__init__()
-        
-        # 1. Input Embedding (208개 센서 -> d_model 차원 확대)
-        self.embedding = nn.Linear(input_dim, d_model)
-        self.pos_encoder = PositionalEncoding(d_model, max_len=window_size)
-        
-        # 2. Transformer Encoder (HuggingFace DistilBert 대체)
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=d_model, 
-            nhead=nhead, 
-            dropout=dropout, 
-            batch_first=True # (batch, seq, feature) 형태 유지
-        )
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        
-        # 3. Decoder / Reconstruction Layer (Latent -> 원본 208개 센서 복원)
-        self.decoder = nn.Sequential(
-            nn.Linear(d_model, d_model // 2),
-            nn.GELU(),
-            nn.Linear(d_model // 2, input_dim)
-        )
+class SensorTransformerAutoencoder(nn.Module):
+    def __init__(self, num_sensors, d_model=128):
+        super().__init__()
+        self.num_sensors = num_sensors
+        self.input_embedding = nn.Linear(1, d_model)
+        self.positional_embedding = nn.Embedding(self.num_sensors, d_model)
+        self.transformer_encoder = DistilBertModel(bert_config)
+        self.decoder_head = nn.Linear(d_model, 1)
 
     def forward(self, x):
-        # x: (batch_size, window_size, 208)
-        x_emb = self.embedding(x)
-        x_emb = self.pos_encoder(x_emb)
-        
-        latent = self.transformer_encoder(x_emb)
-        reconstruction = self.decoder(latent)
-        
-        return reconstruction # 원본 데이터와 형태 동일 (batch, window, 208)
+        x_unsqueezed = x.unsqueeze(-1)
+        embedded_x = self.input_embedding(x_unsqueezed)
+        positions = torch.arange(0, self.num_sensors).expand(x.size(0), -1).to(config.DEVICE)
+        pos_emb = self.positional_embedding(positions)
+        final_embedding = embedded_x + pos_emb
+
+        padding_size = 208 - self.num_sensors
+        attention_mask = torch.ones(x.size(0), self.num_sensors).to(config.DEVICE)
+
+        if padding_size > 0:
+            pad = torch.zeros(final_embedding.size(0), padding_size, final_embedding.size(2)).to(config.DEVICE)
+            final_embedding = torch.cat([final_embedding, pad], dim=1)
+            pad_mask = torch.zeros(x.size(0), padding_size).to(config.DEVICE)
+            attention_mask = torch.cat([attention_mask, pad_mask], dim=1)
+
+        encoder_output = self.transformer_encoder(inputs_embeds=final_embedding, attention_mask=attention_mask)
+        hidden_state = encoder_output.last_hidden_state
+        hidden_state = hidden_state[:, :self.num_sensors, :]
+        reconstructed_x = self.decoder_head(hidden_state)
+        return reconstructed_x.squeeze(-1)

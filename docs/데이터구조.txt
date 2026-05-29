@@ -1,0 +1,133 @@
+폴더 PATH의 목록입니다.
+볼륨 일련 번호가 00000056 7244:E215입니다.
+C:.
+|   데이터구조.txt
+|   
++---preprocessed
+|   \---test
+|           Test01_OK_chg_Label.csv
+|           Test02_OK_dchg_Label.csv
+|           Test03_OK_chg_Label.csv
+|           Test04_OK_dchg_Label.csv
+|           Test05_NG_chg_Label.csv
+|           Test06_NG_chg_Label.csv
+|           Test07_NG_dchg_Label.csv
+|           Test08_NG_chg_Label.csv
+|           Test09_NG_dchg_Label.csv
+|           
+\---raw_data
+    +---test
+    |       Test01_OK_chg.csv
+    |       Test02_OK_dchg.csv
+    |       Test03_OK_chg .csv
+    |       Test04_OK_dchg.csv
+    |       Test05_NG_chg.csv
+    |       Test06_NG_chg.csv
+    |       Test07_NG_dchg.csv
+    |       Test08_NG_chg.csv
+    |       Test09_NG_dchg.csv
+    |       
+    \---train
+            1000_chg.csv
+            1000_dchg.csv
+            1001_chg.csv
+            1001_dchg.csv
+            1002_chg.csv
+            1002_dchg.csv
+            1003_chg.csv
+            1003_dchg.csv
+            1004_chg.csv
+            1004_dchg.csv
+            1005_chg.csv
+            1005_dchg.csv
+            1006_chg.csv
+            1006_dchg.csv
+            1007_chg.csv
+            1007_dchg.csv
+            1008_chg.csv
+            1008_dchg.csv
+            1009_chg.csv
+            1009_dchg.csv
+            1010_chg.csv
+            1010_dchg.csv
+            1011_chg.csv
+            1011_dchg.csv
+            1012_chg.csv
+            1012_dchg.csv
+            1013_chg.csv
+            1013_dchg.csv
+            1014_chg.csv
+            1014_dchg.csv
+            1015_chg.csv
+            1015_dchg.csv
+            1016_chg.csv
+            1016_dchg.csv
+            1017_chg.csv
+            1017_dchg.csv
+            1018_chg.csv
+            1018_dchg.csv
+            1019_chg.csv
+            1019_dchg.csv
+            1020_chg.csv
+            1020_dchg.csv
+            1021_chg.csv
+            1021_dchg.csv
+            1022_chg.csv
+            1022_dchg.csv
+            1023_chg.csv
+            1023_dchg.csv
+            1024_chg.csv
+            1024_dchg.csv
+            1025_chg.csv
+            1025_dchg.csv
+            1026_chg.csv
+            1026_dchg.csv
+            1027_chg.csv
+            1027_dchg.csv
+            1028_chg.csv
+            1028_dchg.csv
+            1029_chg.csv
+            1029_dchg.csv
+            1030_chg.csv
+            1030_dchg.csv
+            1031_chg.csv
+            1031_dchg.csv
+            1032_chg.csv
+            1032_dchg.csv
+            1033_chg.csv
+            1033_dchg.csv
+            1034_chg.csv
+            1034_dchg.csv
+            1035_chg.csv
+            1035_dchg.csv
+            1036_chg.csv
+            1036_dchg.csv
+            1037_chg.csv
+            1037_dchg.csv
+            1038_chg.csv
+            1038_dchg.csv
+            1039_chg.csv
+            1039_dchg.csv
+            1040_chg.csv
+            1040_dchg.csv
+            1041_chg.csv
+            1041_dchg.csv
+            1042_chg.csv
+            1042_dchg.csv
+            1043_chg.csv
+            1043_dchg.csv
+            1044_chg.csv
+            1044_dchg.csv
+            1045_chg.csv
+            1045_dchg.csv
+            1046_chg.csv
+            1046_dchg.csv
+            1047_chg.csv
+            1047_dchg.csv
+            1048_chg.csv
+            1048_dchg.csv
+            1049_chg.csv
+            1049_dchg.csv
+            1050_chg.csv
+            1050_dchg.csv
+            

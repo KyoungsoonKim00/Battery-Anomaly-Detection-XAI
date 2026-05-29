@@ -5,8 +5,8 @@ Markdown# Battery-Anomaly-Detection-XAI
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C.svg)
 
-## 💡 비즈니스 임팩트 : "데이터를 넘어 현장의 Action으로"
-본 프로젝트는 단순한 이상탐지를 넘어, 설명 가능한 AI(XAI) 기술인 SHAP을 결합하여 **현장 작업자가 즉각적으로 오류 원인을 파악하고 정비에 착수할 수 있는 실질적인 가이드라인(Action Plan)**을 제공하는 데 집중합니다.
+## 💡 비즈니스 임팩트 : "데이터를 넘어 현장의 Action으로" 
+본 프로젝트는 단순한 이상탐지를 넘어, 설명 가능한 AI(XAI) 기술인 SHAP을 결합하여 **현장 작업자가 즉각적으로 오류 원인을 파악하고 정비에 착수할 수 있는 실질적인 가이드라인(Action Plan)** 을 제공하는 데 집중합니다.
 
 | 이상탐지 결과 (AI) | SHAP 원인 분석 (XAI) | 도메인 액션 플랜 (현장 지시) |
 | :--- | :--- | :--- |
@@ -38,10 +38,12 @@ Battery_Anomaly_Detection/
 └── docs/                           # 도메인 지식 및 데이터 세부 가이드
     ├── 데이터구조.txt
     └── Guidebook_전자부품(배터리팩) 품질보증 AI 데이터셋.pdf
+    └── 제출_산업경영공학과 인공지능 및 데이터사이언스 경진대회_20181042김경순.pdf
 ```
 
 
 ## 🛠️ 핵심 방법론 및 아키텍처 (Methodology)
+<img width="1189" height="590" alt="f1_score" src="https://github.com/user-attachments/assets/d063fb1b-bf70-4409-bfd7-c601f85803f1" />
 
 ### 1. Robust 데이터 전처리 파이프라인
 - **결측치 제어**: 산업 데이터 특성상 발생하는 결측치 및 인피니티 에러를 안전하게 0.0으로 대체하는 `SimpleImputer` 적용 및 상태 저장.
@@ -50,7 +52,8 @@ Battery_Anomaly_Detection/
 
 ### 2. DistilBert 기반 Transformer Autoencoder
 - **시퀀스 인코딩**: 208개 전압 및 온도 채널의 다변량 데이터를 임베딩 레이어를 통해 고차원($d_{model}=128$) 공간으로 투사 후, 포지셔널 임베딩을 결합하여 채널 간의 상대적 정렬 상태를 표현.
-- **Self-Attention 백본**: Hugging Face의 `DistilBertModel`(4 Layers, 4 Heads, Hidden Dim 256) 아키텍처를 차용하여 센서 간 유기적인 상관관계와 정상 상태의 내부 동기화 패턴을 고도화된 어텐션 메커니즘으로 학습.
+- **Self-Attention 백본**: Hugging Face의 `DistilBertModel`(4 Layers, 4 Heads, Hidden Dim 256) 아키텍처를 차용하여 센서 간 유기![Uploading f1_score.png…]()
+적인 상관관계와 정상 상태의 내부 동기화 패턴을 고도화된 어텐션 메커니즘으로 학습.
 - **이상치 점수(Anomaly Score)**: 정상 데이터로만 학습된 오토인코더가 불량 패턴을 입력받을 때 발생하는 **복원 오차(MSE Loss)**의 크기를 기반으로 이상 수준을 정량화.
 
 ### 3. Precision-Recall 곡선 기반 탐색
@@ -59,6 +62,9 @@ Battery_Anomaly_Detection/
 ### 4. 설명 가능한 AI (SHAP) 기반 불량 원인 규명
 - **배경 데이터 축소**: 고차원 모델의 SHAP 연산 오버헤드를 극복하기 위해 정상 훈련 데이터셋을 대표하는 10개의 핵심 군집 센트로이드를 `KMeans`로 추출하여 연산 병목을 최적화.
 - **원인 분석**: 최종 복원 오차(Reconstruction Error) 자체를 Target 함수로 지정하고 `KernelExplainer`를 통해 각 센서 채널이 오차 증가에 기여한 섀플리 값(Shapley Value)을 계산. 이를 통해 불량을 유발한 최우선 순위 '범인 센서(Culprit Sensor)'를 특정.
+<img width="1002" height="494" alt="test07_NG_dchg_M02CV02" src="https://github.com/user-attachments/assets/36d0495b-0677-4dcb-958f-9f0787e0ff89" />
+<img width="1002" height="494" alt="test07_NG_dchg_M02CV01" src="https://github.com/user-attachments/assets/cc718659-dd5d-4d82-bdae-baa42e903937" />
+
 
 ---
 

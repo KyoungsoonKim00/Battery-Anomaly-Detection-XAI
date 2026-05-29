@@ -61,8 +61,9 @@ Battery_Anomaly_Detection/
 ### 4. 설명 가능한 AI (SHAP) 기반 불량 원인 규명
 - **배경 데이터 축소**: 고차원 모델의 SHAP 연산 오버헤드를 극복하기 위해 정상 훈련 데이터셋을 대표하는 10개의 핵심 군집 센트로이드를 `KMeans`로 추출하여 연산 병목을 최적화.
 - **원인 분석**: 최종 복원 오차(Reconstruction Error) 자체를 Target 함수로 지정하고 `KernelExplainer`를 통해 각 센서 채널이 오차 증가에 기여한 섀플리 값(Shapley Value)을 계산. 이를 통해 불량을 유발한 최우선 순위 '범인 센서(Culprit Sensor)'를 특정.
-<img width="1002" height="494" alt="test07_NG_dchg_M02CV02" src="https://github.com/user-attachments/assets/36d0495b-0677-4dcb-958f-9f0787e0ff89" />
 <img width="1002" height="494" alt="test07_NG_dchg_M02CV01" src="https://github.com/user-attachments/assets/cc718659-dd5d-4d82-bdae-baa42e903937" />
+<img width="1200" height="500" alt="Compare_Test07_NG_dchg_M02CV02" src="https://github.com/user-attachments/assets/8017bfa2-569a-41ea-87ff-c2ad60c9c6be" />
+
 
 
 ---
